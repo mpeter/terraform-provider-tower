@@ -1,2 +1,5 @@
 # Ignore dist file
-terraform-provider-awesome
+terraform-provider-tower
+terraform.tfstate
+terraform.tfstate.backup
+terraform-provider-tower.iml

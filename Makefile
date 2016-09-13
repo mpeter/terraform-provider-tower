@@ -18,7 +18,7 @@ deps:
 	go install github.com/hashicorp/terraform
 
 build:
-	go build -o terraform-provider-awesome .
+	go build -o terraform-provider-tower .
 
 test:
 	go test -v .
