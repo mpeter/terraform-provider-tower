@@ -3,6 +3,8 @@ package tower
 import (
 	"fmt"
 
+	"strconv"
+
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/mpeter/go-towerapi/towerapi"
 	"github.com/mpeter/go-towerapi/towerapi/organizations"
@@ -16,21 +18,14 @@ func resourceOrganization() *schema.Resource {
 		Delete: resourceOrganizationDelete,
 
 		Schema: map[string]*schema.Schema{
-			"id": &schema.Schema{
-				Type:     schema.TypeInt,
-				Computed: true,
-			},
-
 			"name": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
-				ForceNew: false,
 			},
 
 			"description": &schema.Schema{
 				Type:     schema.TypeString,
 				Optional: true,
-				ForceNew: false,
 				Default:  "",
 			},
 		},
@@ -41,77 +36,66 @@ func resourceOrganizationCreate(d *schema.ResourceData, meta interface{}) error 
 	client := meta.(*towerapi.Client)
 	service := client.Organizations
 
-	name := d.Get("name").(string)
-	if i, _, err := service.GetByName(name); err != nil {
-		return fmt.Errorf("Failed to get organization from Tower API: %v", err)
-	} else if i != nil {
-		return fmt.Errorf("Organization named %s already exists, names must be unique", name)
+	request, err := buildOrganization(d, meta)
+	if err != nil {
+		return err
 	}
-	request := &organizations.Request{
-		Name: name,
+	i, err := service.Create(request)
+	if err != nil {
+		return err
 	}
-	if description, ok := d.GetOk("description"); ok {
-		request.Description = description.(string)
-	}
-	if i, _, err := service.Create(request); err != nil {
-		return fmt.Errorf("Failed to create organization from Tower API: %v", err)
-	} else {
-		id := fmt.Sprintf("%d", i.ID)
-		d.SetId(id)
-		d.Set("name", i.Name)
-		d.Set("description", i.Description)
-	}
-	return nil
+	d.SetId(strconv.Itoa(i.ID))
+	return resourceOrganizationRead(d, meta)
 }
 
 func resourceOrganizationRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*towerapi.Client)
 	service := client.Organizations
-	id := d.Get("id").(int)
 
-	if i, _, err := service.GetByID(id); err != nil {
+	r, err := service.GetByID(d.Id())
+	if err != nil {
 		return fmt.Errorf("Failed to get organization from Tower API: %v", err)
-	} else {
-		id := fmt.Sprintf("%d", i.ID)
-		d.SetId(id)
-		d.Set("name", i.Name)
-		d.Set("id", i.ID)
-		d.Set("description", i.Description)
 	}
+
+	d = setOrganizationResourceData(d, r)
+
 	return nil
 }
 
 func resourceOrganizationUpdate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*towerapi.Client)
 	service := client.Organizations
-	id := d.Get("id").(int)
-
-	request := &organizations.Request{
-		Name: d.Get("name").(string),
+	request, err := buildOrganization(d, client)
+	if err != nil {
+		return err
 	}
-	if description, ok := d.GetOk("description"); ok {
-		request.Description = description.(string)
+	if _, err := service.Update(request); err != nil {
+		return err
 	}
-	if i, _, err := service.Update(id, request); err != nil {
-		return fmt.Errorf("Failed to update organization : %v", err)
-	} else {
-		d.Set("name", i.Name)
-		id := fmt.Sprintf("%d", i.ID)
-		d.SetId(id)
-		d.Set("id", i.ID)
-		d.Set("description", i.Description)
-	}
-	return nil
+	return resourceOrganizationRead(d, meta)
 }
 
 func resourceOrganizationDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*towerapi.Client)
 	service := client.Organizations
-	id := d.Get("id").(int)
-	if _, err := service.Delete(id); err != nil {
-		return fmt.Errorf("Failed to update organization : %v", err)
-	} else {
-		d.SetId("")
+	if err := service.Delete(d.Id()); err != nil {
+		return fmt.Errorf("Failed to delete (%s): %s", d.Id(), err)
 	}
 	return nil
+}
+
+func setOrganizationResourceData(d *schema.ResourceData, r *organizations.Organization) *schema.ResourceData {
+	d.Set("name", r.Name)
+	d.Set("description", r.Description)
+	return d
+}
+
+func buildOrganization(d *schema.ResourceData, meta interface{}) (*organizations.Request, error) {
+
+	request := &organizations.Request{
+		Name:        d.Get("name").(string),
+		Description: d.Get("description").(string),
+	}
+
+	return request, nil
 }

@@ -16,8 +16,8 @@ func TestAccArtifact_basic(t *testing.T) {
 			resource.TestStep{
 				Config: testAccInventory_basic,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckArtifactState("name", "tf-provider-test16"),
-					testAccCheckArtifactState("organization", "1"),
+					testAccCheckArtifactState("name", "tf-provider-test19"),
+					testAccCheckArtifactState("organization_id", "1"),
 				),
 			},
 		},
@@ -32,8 +32,8 @@ func TestAccArtifact_metadata(t *testing.T) {
 			{
 				Config: testAccInventory_description,
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckArtifactState("name", "tf-provider-test15"),
-					testAccCheckArtifactState("organization", "1"),
+					testAccCheckArtifactState("name", "tf-provider-test20"),
+					testAccCheckArtifactState("organization_id", "1"),
 					testAccCheckArtifactState("description", "foobar"),
 				),
 			},
@@ -64,13 +64,13 @@ func testAccCheckArtifactState(key, value string) resource.TestCheckFunc {
 
 const testAccInventory_basic = `
 resource "tower_inventory" "foobar" {
-	name = "tf-provider-test16"
-	organization = "1"
+	name = "tf-provider-test19"
+	organization_id = "1"
 }`
 
 const testAccInventory_description = `
 resource "tower_inventory" "foobar" {
-	name = "tf-provider-test15"
-	organization = "1"
+	name = "tf-provider-test20"
+	organization_id = "1"
 	description = "foobar"
 }`

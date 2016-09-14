@@ -1,11 +1,10 @@
 package tower
 
 import (
-	"net/http"
+	"fmt"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/mpeter/go-towerapi/towerapi"
 )
 
 func Provider() terraform.ResourceProvider {
@@ -28,12 +27,14 @@ func Provider() terraform.ResourceProvider {
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("TOWER_PASSWORD", nil),
 				Description: descriptions["password"],
+				Sensitive:   true,
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"tower_organization": resourceOrganization(),
 			"tower_inventory":    resourceInventory(),
 			"tower_host":         resourceHost(),
+			"tower_group":        resourceGroup(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
@@ -50,13 +51,21 @@ func init() {
 }
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
-	var err error
-	e := d.Get("endpoint").(string)
-	u := d.Get("username").(string)
-	p := d.Get("password").(string)
-	client, err := towerapi.NewClient(http.DefaultClient, e, u, p)
-	if err != nil {
-		return nil, err
+
+	config := &Config{
+		Endpoint: d.Get("endpoint").(string),
+		Username: d.Get("username").(string),
+		Password: d.Get("password").(string),
 	}
+
+	client, err := config.NewClient()
+	if err != nil {
+		return nil, fmt.Errorf("Error initializing Tower client: %s", err)
+	}
+
+	//client.Login()
+	//if err != nil {
+	//	return nil, fmt.Errorf("Error getting Me from Tower server: %s", err)
+	//}
 	return client, nil
 }

@@ -7,15 +7,15 @@ import (
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/mpeter/go-towerapi/towerapi"
-	"github.com/mpeter/go-towerapi/towerapi/hosts"
+	"github.com/mpeter/go-towerapi/towerapi/job_templates"
 )
 
-func resourceHost() *schema.Resource {
+func resourceJobTemplate() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceHostCreate,
-		Read:   resourceHostRead,
-		Update: resourceHostUpdate,
-		Delete: resourceHostDelete,
+		Create: resourceJobTemplateCreate,
+		Read:   resourceJobTemplateRead,
+		Update: resourceJobTemplateUpdate,
+		Delete: resourceJobTemplateDelete,
 
 		Schema: map[string]*schema.Schema{
 
@@ -68,11 +68,11 @@ func resourceHost() *schema.Resource {
 	}
 }
 
-func resourceHostCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceJobTemplateCreate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*towerapi.Client)
-	service := client.Hosts
+	service := client.JobTemplates
 
-	request, err := buildHost(d, meta)
+	request, err := buildJobTemplate(d, meta)
 	if err != nil {
 		return err
 	}
@@ -81,46 +81,46 @@ func resourceHostCreate(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 	d.SetId(strconv.Itoa(i.ID))
-	return resourceHostRead(d, meta)
+	return resourceJobTemplateRead(d, meta)
 }
 
-func resourceHostRead(d *schema.ResourceData, meta interface{}) error {
+func resourceJobTemplateRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*towerapi.Client)
-	service := client.Hosts
+	service := client.JobTemplates
 
 	r, err := service.GetByID(d.Id())
 	if err != nil {
 		return fmt.Errorf("Failed to get inventory from Tower API: %v", err)
 	}
 
-	d = setHostResourceData(d, r)
+	d = setJobTemplateResourceData(d, r)
 
 	return nil
 }
 
-func resourceHostUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceJobTemplateUpdate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*towerapi.Client)
-	service := client.Hosts
-	request, err := buildHost(d, client)
+	service := client.JobTemplates
+	request, err := buildJobTemplate(d, client)
 	if err != nil {
 		return err
 	}
 	if _, err := service.Update(request); err != nil {
 		return err
 	}
-	return resourceHostRead(d, meta)
+	return resourceJobTemplateRead(d, meta)
 }
 
-func resourceHostDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceJobTemplateDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*towerapi.Client)
-	service := client.Hosts
+	service := client.JobTemplates
 	if err := service.Delete(d.Id()); err != nil {
 		return fmt.Errorf("Failed to delete (%s): %s", d.Id(), err)
 	}
 	return nil
 }
 
-func setHostResourceData(d *schema.ResourceData, r *hosts.Host) *schema.ResourceData {
+func setJobTemplateResourceData(d *schema.ResourceData, r *job_templates.JobTemplate) *schema.ResourceData {
 	d.Set("name", r.Name)
 	d.Set("description", r.Description)
 	d.Set("inventory_id", r.Inventory)
@@ -130,10 +130,10 @@ func setHostResourceData(d *schema.ResourceData, r *hosts.Host) *schema.Resource
 	return d
 }
 
-func buildHost(d *schema.ResourceData, meta interface{}) (*hosts.Request, error) {
+func buildJobTemplate(d *schema.ResourceData, meta interface{}) (*job_templates.Request, error) {
 
 	inv_id, _ := strconv.Atoi(d.Get("inventory_id").(string))
-	request := &hosts.Request{
+	request := &job_templates.Request{
 		Name:      d.Get("name").(string),
 		Inventory: inv_id,
 	}

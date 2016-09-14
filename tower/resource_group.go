@@ -7,15 +7,15 @@ import (
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/mpeter/go-towerapi/towerapi"
-	"github.com/mpeter/go-towerapi/towerapi/hosts"
+	"github.com/mpeter/go-towerapi/towerapi/groups"
 )
 
-func resourceHost() *schema.Resource {
+func resourceGroup() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceHostCreate,
-		Read:   resourceHostRead,
-		Update: resourceHostUpdate,
-		Delete: resourceHostDelete,
+		Create: resourceGroupCreate,
+		Read:   resourceGroupRead,
+		Update: resourceGroupUpdate,
+		Delete: resourceGroupDelete,
 
 		Schema: map[string]*schema.Schema{
 
@@ -33,17 +33,6 @@ func resourceHost() *schema.Resource {
 			"inventory_id": &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
-			},
-
-			"enabled": &schema.Schema{
-				Type:     schema.TypeBool,
-				Required: true,
-			},
-
-			"instance_id": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  "",
 			},
 
 			"variables": &schema.Schema{
@@ -68,11 +57,11 @@ func resourceHost() *schema.Resource {
 	}
 }
 
-func resourceHostCreate(d *schema.ResourceData, meta interface{}) error {
+func resourceGroupCreate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*towerapi.Client)
-	service := client.Hosts
+	service := client.Groups
 
-	request, err := buildHost(d, meta)
+	request, err := buildGroup(d, meta)
 	if err != nil {
 		return err
 	}
@@ -81,59 +70,57 @@ func resourceHostCreate(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 	d.SetId(strconv.Itoa(i.ID))
-	return resourceHostRead(d, meta)
+	return resourceGroupRead(d, meta)
 }
 
-func resourceHostRead(d *schema.ResourceData, meta interface{}) error {
+func resourceGroupRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*towerapi.Client)
-	service := client.Hosts
+	service := client.Groups
 
 	r, err := service.GetByID(d.Id())
 	if err != nil {
 		return fmt.Errorf("Failed to get inventory from Tower API: %v", err)
 	}
 
-	d = setHostResourceData(d, r)
+	d = setGroupResourceData(d, r)
 
 	return nil
 }
 
-func resourceHostUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceGroupUpdate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*towerapi.Client)
-	service := client.Hosts
-	request, err := buildHost(d, client)
+	service := client.Groups
+	request, err := buildGroup(d, meta)
 	if err != nil {
 		return err
 	}
 	if _, err := service.Update(request); err != nil {
 		return err
 	}
-	return resourceHostRead(d, meta)
+	return resourceGroupRead(d, meta)
 }
 
-func resourceHostDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceGroupDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*towerapi.Client)
-	service := client.Hosts
+	service := client.Groups
 	if err := service.Delete(d.Id()); err != nil {
 		return fmt.Errorf("Failed to delete (%s): %s", d.Id(), err)
 	}
 	return nil
 }
 
-func setHostResourceData(d *schema.ResourceData, r *hosts.Host) *schema.ResourceData {
+func setGroupResourceData(d *schema.ResourceData, r *groups.Group) *schema.ResourceData {
 	d.Set("name", r.Name)
 	d.Set("description", r.Description)
 	d.Set("inventory_id", r.Inventory)
-	d.Set("enabled", r.Enabled)
-	d.Set("instance_id", r.InstanceID)
 	d.Set("variables", r.Variables)
 	return d
 }
 
-func buildHost(d *schema.ResourceData, meta interface{}) (*hosts.Request, error) {
+func buildGroup(d *schema.ResourceData, meta interface{}) (*groups.Request, error) {
 
 	inv_id, _ := strconv.Atoi(d.Get("inventory_id").(string))
-	request := &hosts.Request{
+	request := &groups.Request{
 		Name:      d.Get("name").(string),
 		Inventory: inv_id,
 	}
@@ -152,12 +139,6 @@ func buildHost(d *schema.ResourceData, meta interface{}) (*hosts.Request, error)
 	}
 	if description, ok := d.GetOk("description"); ok {
 		request.Description = description.(string)
-	}
-	if enabled, ok := d.GetOk("enabled"); ok {
-		request.Enabled = enabled.(bool)
-	}
-	if instance_id, ok := d.GetOk("instance_id"); ok {
-		request.InstanceID = instance_id.(string)
 	}
 
 	return request, nil
