@@ -47,22 +47,10 @@ func resourceHost() *schema.Resource {
 			},
 
 			"variables": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			"variables_json": &schema.Schema{
-				Type:          schema.TypeString,
-				Optional:      true,
-				ConflictsWith: []string{"variables_yaml"},
-				StateFunc:     normalizeJson,
-			},
-
-			"variables_yaml": &schema.Schema{
 				Type:      schema.TypeString,
 				Optional:  true,
-				StateFunc: normalizeYaml,
+				Default:   "",
+				StateFunc: normalizeJsonYaml,
 			},
 		},
 	}
@@ -132,33 +120,13 @@ func setHostResourceData(d *schema.ResourceData, r *hosts.Host) *schema.Resource
 
 func buildHost(d *schema.ResourceData, meta interface{}) (*hosts.Request, error) {
 
-	inv_id, _ := strconv.Atoi(d.Get("inventory_id").(string))
 	request := &hosts.Request{
-		Name:      d.Get("name").(string),
-		Inventory: inv_id,
+		Name:        d.Get("name").(string),
+		Description: d.Get("description").(string),
+		Inventory:   AtoipOr(d.Get("inventory_id").(string), nil),
+		Enabled:     d.Get("enabled").(bool),
+		InstanceID:  d.Get("instance_id").(string),
+		Variables:   normalizeJsonYaml(d.Get("variables").(string)),
 	}
-
-	if variables_json, ok := d.GetOk("variables_json"); ok {
-		if variables_yaml, ok := d.GetOk("variables_yaml"); ok {
-			return nil, fmt.Errorf("Both variables_json and variables_yaml are set: %v / %v ", variables_json, variables_yaml)
-		}
-		request.Variables = normalizeJson(variables_json.(string))
-	}
-	if variables_yaml, ok := d.GetOk("variables_yaml"); ok {
-		if variables_json, ok := d.GetOk("variables_json"); ok {
-			return nil, fmt.Errorf("Both variables_yaml and variables_json are set: %v / %v ", variables_yaml, variables_json)
-		}
-		request.Variables = normalizeYaml(variables_yaml.(string))
-	}
-	if description, ok := d.GetOk("description"); ok {
-		request.Description = description.(string)
-	}
-	if enabled, ok := d.GetOk("enabled"); ok {
-		request.Enabled = enabled.(bool)
-	}
-	if instance_id, ok := d.GetOk("instance_id"); ok {
-		request.InstanceID = instance_id.(string)
-	}
-
 	return request, nil
 }

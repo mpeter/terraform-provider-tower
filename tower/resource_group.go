@@ -36,22 +36,9 @@ func resourceGroup() *schema.Resource {
 			},
 
 			"variables": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
-
-			"variables_json": &schema.Schema{
-				Type:          schema.TypeString,
-				Optional:      true,
-				ConflictsWith: []string{"variables_yaml"},
-				StateFunc:     normalizeJson,
-			},
-
-			"variables_yaml": &schema.Schema{
 				Type:      schema.TypeString,
 				Optional:  true,
-				StateFunc: normalizeYaml,
+				StateFunc: normalizeJsonYaml,
 			},
 		},
 	}
@@ -119,26 +106,11 @@ func setGroupResourceData(d *schema.ResourceData, r *groups.Group) *schema.Resou
 
 func buildGroup(d *schema.ResourceData, meta interface{}) (*groups.Request, error) {
 
-	inv_id, _ := strconv.Atoi(d.Get("inventory_id").(string))
 	request := &groups.Request{
-		Name:      d.Get("name").(string),
-		Inventory: inv_id,
-	}
-
-	if variables_json, ok := d.GetOk("variables_json"); ok {
-		if variables_yaml, ok := d.GetOk("variables_yaml"); ok {
-			return nil, fmt.Errorf("Both variables_json and variables_yaml are set: %v / %v ", variables_json, variables_yaml)
-		}
-		request.Variables = normalizeJson(variables_json.(string))
-	}
-	if variables_yaml, ok := d.GetOk("variables_yaml"); ok {
-		if variables_json, ok := d.GetOk("variables_json"); ok {
-			return nil, fmt.Errorf("Both variables_yaml and variables_json are set: %v / %v ", variables_yaml, variables_json)
-		}
-		request.Variables = normalizeYaml(variables_yaml.(string))
-	}
-	if description, ok := d.GetOk("description"); ok {
-		request.Description = description.(string)
+		Name:        d.Get("name").(string),
+		Description: d.Get("description").(string),
+		Inventory:   AtoipOr(d.Get("inventory_id").(string), nil),
+		Variables:   normalizeJsonYaml(d.Get("variables").(string)),
 	}
 
 	return request, nil

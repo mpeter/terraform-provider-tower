@@ -1,10 +1,11 @@
 package tower
 
 import (
-	"fmt"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
+	"github.com/mitchellh/mapstructure"
+	"log"
 )
 
 func Provider() terraform.ResourceProvider {
@@ -13,13 +14,13 @@ func Provider() terraform.ResourceProvider {
 			"endpoint": &schema.Schema{
 				Type:        schema.TypeString,
 				Required:    true,
-				DefaultFunc: schema.EnvDefaultFunc("TOWER_ENDPOINT", nil),
+				DefaultFunc: schema.EnvDefaultFunc("TOWER_ENDPOINT", "http://localhost/api/v1"),
 				Description: descriptions["endpoint"],
 			},
 			"username": &schema.Schema{
 				Type:        schema.TypeString,
 				Optional:    true,
-				DefaultFunc: schema.EnvDefaultFunc("TOWER_USERNAME", nil),
+				DefaultFunc: schema.EnvDefaultFunc("TOWER_USERNAME", "admin"),
 				Description: descriptions["username"],
 			},
 			"password": &schema.Schema{
@@ -31,10 +32,13 @@ func Provider() terraform.ResourceProvider {
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"tower_organization": resourceOrganization(),
-			"tower_inventory":    resourceInventory(),
-			"tower_host":         resourceHost(),
+			"tower_credential":   resourceCredential(),
 			"tower_group":        resourceGroup(),
+			"tower_host":         resourceHost(),
+			"tower_inventory":    resourceInventory(),
+			"tower_job_template": resourceJobTemplate(),
+			"tower_organization": resourceOrganization(),
+			"tower_project":      resourceProject(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
@@ -52,20 +56,12 @@ func init() {
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 
-	config := &Config{
-		Endpoint: d.Get("endpoint").(string),
-		Username: d.Get("username").(string),
-		Password: d.Get("password").(string),
+	var config Config
+	configRaw := d.Get("").(map[string]interface{})
+	if err := mapstructure.Decode(configRaw, &config); err != nil {
+		return nil, err
 	}
 
-	client, err := config.NewClient()
-	if err != nil {
-		return nil, fmt.Errorf("Error initializing Tower client: %s", err)
-	}
-
-	//client.Login()
-	//if err != nil {
-	//	return nil, fmt.Errorf("Error getting Me from Tower server: %s", err)
-	//}
-	return client, nil
+	log.Printf("[INFO] Initializing Tower Client" )
+	return config.NewClient()
 }

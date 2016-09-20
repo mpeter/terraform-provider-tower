@@ -1,22 +1,32 @@
 package tower
 
 import (
-	"net/http"
-
 	"github.com/mpeter/go-towerapi/towerapi"
 )
 
 type Config struct {
-	Endpoint string
-	Username string
-	Password string
+	Endpoint string `mapstructure:"endpoint"`
+	Username string `mapstructure:"username"`
+	Password string `mapstructure:"password"`
 }
 
 func (c *Config) NewClient() (*towerapi.Client, error) {
-	config := new(towerapi.ClientConfig)
-	config.Endpoint = c.Endpoint
-	config.Password = c.Password
-	config.Username = c.Username
 
-	return towerapi.NewClient(http.DefaultClient, config)
+	config := towerapi.DefaultConfig()
+
+	if c.Endpoint != "" {
+		config.Endpoint = c.Endpoint
+	}
+	if c.Username != "" {
+		config.Password = c.Password
+	}
+	if c.Username != "" {
+		config.Username = c.Username
+	}
+
+	if err := config.LoadAndValidate() ; err != nil {
+		return nil, err
+	}
+
+	return towerapi.NewClient(config)
 }
