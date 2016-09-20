@@ -19,43 +19,43 @@ func resourceProject() *schema.Resource {
 
 		Schema: map[string]*schema.Schema{
 			"name": &schema.Schema{
-				Type:     schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
 				Description: "Name of this project",
 			},
 
 			"description": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  "",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "",
 				Description: "Optional description of this project.",
 			},
 
 			"local_path": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  "",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "",
 				Description: "Local path (relative to PROJECTS_ROOT) containing playbooks and related files for this project.",
 			},
 
 			"scm_type": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  "",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "",
 				Description: "One of \"\" (manual), git, hg, svn",
 			},
 
 			"scm_url": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  "",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "",
 				Description: "",
 			},
 
 			"scm_branch": &schema.Schema{
-				Type:     schema.TypeString,
-				Optional: true,
-				Default:  "",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "",
 				Description: "Specific branch, tag or commit to checkout.",
 			},
 			"scm_clean": &schema.Schema{
@@ -79,12 +79,12 @@ func resourceProject() *schema.Resource {
 			"scm_update_on_launch": &schema.Schema{
 				Type:     schema.TypeBool,
 				Optional: true,
-				Default: false,
+				Default:  false,
 			},
 			"scm_update_cache_timeout": &schema.Schema{
 				Type:     schema.TypeInt,
 				Optional: true,
-				Default: 0,
+				Default:  0,
 			},
 		},
 	}
@@ -161,17 +161,17 @@ func setProjectResourceData(d *schema.ResourceData, r *projects.Project) *schema
 func buildProject(d *schema.ResourceData, meta interface{}) (*projects.Request, error) {
 
 	request := &projects.Request{
-		Name:              d.Get("name").(string),
-		Description:       d.Get("description").(string),
-		LocalPath:         d.Get("local_path").(string),
-		ScmType:           d.Get("scm_type").(string),
-		ScmURL:            d.Get("scm_url").(string),
-		ScmBranch:         d.Get("scm_branch").(string),
-		ScmClean:          d.Get("scm_clean").(bool),
-		ScmDeleteOnUpdate: d.Get("scm_delete_on_update").(bool),
-		Credential:        AtoipOr(d.Get("credential_id").(string), nil),
-		Organization:      AtoipOr(d.Get("organization_id").(string), nil),
-		ScmUpdateOnLaunch: d.Get("scm_update_on_launch").(bool),
+		Name:                  d.Get("name").(string),
+		Description:           d.Get("description").(string),
+		LocalPath:             d.Get("local_path").(string),
+		ScmType:               d.Get("scm_type").(string),
+		ScmURL:                d.Get("scm_url").(string),
+		ScmBranch:             d.Get("scm_branch").(string),
+		ScmClean:              d.Get("scm_clean").(bool),
+		ScmDeleteOnUpdate:     d.Get("scm_delete_on_update").(bool),
+		Credential:            AtoipOr(d.Get("credential_id").(string), nil),
+		Organization:          AtoipOr(d.Get("organization_id").(string), nil),
+		ScmUpdateOnLaunch:     d.Get("scm_update_on_launch").(bool),
 		ScmUpdateCacheTimeout: d.Get("scm_update_cache_timeout").(int),
 	}
 

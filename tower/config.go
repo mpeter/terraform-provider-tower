@@ -24,7 +24,7 @@ func (c *Config) NewClient() (*towerapi.Client, error) {
 		config.Username = c.Username
 	}
 
-	if err := config.LoadAndValidate() ; err != nil {
+	if err := config.LoadAndValidate(); err != nil {
 		return nil, err
 	}
 

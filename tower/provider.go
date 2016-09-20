@@ -1,11 +1,11 @@
 package tower
 
 import (
+	"log"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
 	"github.com/mitchellh/mapstructure"
-	"log"
 )
 
 func Provider() terraform.ResourceProvider {
@@ -62,6 +62,6 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		return nil, err
 	}
 
-	log.Printf("[INFO] Initializing Tower Client" )
+	log.Printf("[INFO] Initializing Tower Client")
 	return config.NewClient()
 }
